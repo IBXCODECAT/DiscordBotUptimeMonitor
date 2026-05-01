@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
 const setup = require('./src/commands/setup');
+const dashboard = require('./src/commands/dashboard');
 const ready = require('./src/events/ready');
 const presenceUpdate = require('./src/events/presenceUpdate');
 const guildCreate = require('./src/events/guildCreate');
@@ -21,6 +22,9 @@ client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName === 'setup') {
     await setup.execute(interaction);
+  }
+  if (interaction.commandName === 'dashboard') {
+    await dashboard.execute(interaction);
   }
 });
 

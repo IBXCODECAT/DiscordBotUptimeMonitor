@@ -26,6 +26,9 @@ const data = new SlashCommandBuilder()
       )
   );
 
+const PORT = process.env.PORT || 3000;
+const DASHBOARD_URL = process.env.DASHBOARD_URL || `http://localhost:${PORT}`;
+
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();
 
@@ -37,17 +40,17 @@ async function execute(interaction) {
     }
 
     if (isMonitored(interaction.guildId, user.id)) {
-      return interaction.reply({ content: `<@${user.id}> is already being monitored.`, ephemeral: true });
+      return interaction.reply({ content: `<@${user.id}> is already being monitored.\n\nYou can also manage your monitored bots from the dashboard: ${DASHBOARD_URL}`, ephemeral: true });
     }
 
     addMonitoredBot(interaction.guildId, user.id);
-    return interaction.reply({ content: `Now monitoring <@${user.id}> for offline status.`, ephemeral: true });
+    return interaction.reply({ content: `Now monitoring <@${user.id}> for offline status.\n\nYou can also manage your monitored bots from the dashboard: ${DASHBOARD_URL}`, ephemeral: true });
   }
 
   if (sub === 'reporting-channel') {
     const channel = interaction.options.getChannel('channel');
     setReportingChannel(interaction.guildId, channel.id);
-    return interaction.reply({ content: `Reporting channel set to <#${channel.id}>. Offline alerts will be sent there.`, ephemeral: true });
+    return interaction.reply({ content: `Reporting channel set to <#${channel.id}>. Offline alerts will be sent there.\n\nYou can also configure these settings from the dashboard: ${DASHBOARD_URL}`, ephemeral: true });
   }
 }
 
