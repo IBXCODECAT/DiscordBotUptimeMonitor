@@ -4,6 +4,7 @@ const setup = require('./src/commands/setup');
 const ready = require('./src/events/ready');
 const presenceUpdate = require('./src/events/presenceUpdate');
 const guildCreate = require('./src/events/guildCreate');
+const web = require('./src/web/server');
 
 const client = new Client({
   intents: [
@@ -24,3 +25,4 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(process.env.BOT_TOKEN);
+web.start(client);

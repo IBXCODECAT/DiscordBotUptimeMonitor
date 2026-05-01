@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bot Monitor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🤖 Bot Monitor</h1>
+      <div id="user-area"></div>
+    </header>
+    <div id="content"></div>
+  </div>
+
+  <script>
+    async function init() {
+      const userArea = document.getElementById('user-area');
+      const content = document.getElementById('content');
+
+      let user;
+      try {
+        const res = await fetch('/api/me');
+        if (!res.ok) throw new Error();
+        user = await res.json();
+      } catch {
+        content.innerHTML = `
+          <div class="login-center">
+            <h2>Bot Monitor Dashboard</h2>
+            <p>Log in with Discord to manage which bots are monitored in your servers.</p>
+            <a href="/auth/login" class="btn btn-primary">
+              <svg width="20" height="20" viewBox="0 0 71 55" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M60.1 4.9A58.6 58.6 0 0 0 45.6.7a.2.2 0 0 0-.2.1 40.8 40.8 0 0 0-1.8 3.7 54.1 54.1 0 0 0-16.2 0A37.4 37.4 0 0 0 25.5.8a.2.2 0 0 0-.2-.1A58.4 58.4 0 0 0 10.9 4.9a.2.2 0 0 0-.1.1C1.6 18.1-.9 31 .3 43.6a.2.2 0 0 0 .1.2 58.9 58.9 0 0 0 17.7 8.9.2.2 0 0 0 .2-.1 42 42 0 0 0 3.6-5.9.2.2 0 0 0-.1-.3 38.7 38.7 0 0 1-5.5-2.6.2.2 0 0 1 0-.4l1.1-.8a.2.2 0 0 1 .2 0c11.5 5.3 24 5.3 35.4 0a.2.2 0 0 1 .2 0l1.1.8a.2.2 0 0 1 0 .4 36.1 36.1 0 0 1-5.5 2.6.2.2 0 0 0-.1.3 47.2 47.2 0 0 0 3.6 5.9.2.2 0 0 0 .2.1 58.7 58.7 0 0 0 17.8-8.9.2.2 0 0 0 .1-.2C73 29.1 69 16.4 60.2 5a.2.2 0 0 0-.1-.1ZM23.7 36.2c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.6 0 6.5 3.3 6.4 7.2 0 3.9-2.8 7.2-6.4 7.2Zm23.7 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.6 0 6.5 3.3 6.4 7.2 0 3.9-2.8 7.2-6.4 7.2Z"/></svg>
+              Login with Discord
+            </a>
+          </div>`;
+        return;
+      }
+
+      const avatarUrl = user.avatar
+        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=32`
+        : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
+      userArea.innerHTML = `
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="user-chip">
+            <img src="${avatarUrl}" alt="">
+            <span>${user.username}</span>
+          </div>
+          <a href="/auth/logout" class="btn btn-ghost btn-sm">Logout</a>
+        </div>`;
+
+      const guilds = await fetch('/api/guilds').then(r => r.json());
+
+      if (!guilds.length) {
+        content.innerHTML = `<p class="empty">No servers found where you have Manage Server permission and the bot is present.</p>`;
+        return;
+      }
+
+      content.innerHTML = `
+        <p class="section-label">Your Servers</p>
+        <div class="guild-grid">${guilds.map(g => {
+          const icon = g.icon
+            ? `<img src="https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=64" alt="">`
+            : g.name.split(' ').map(w => w[0]).join('').slice(0, 2);
+          return `
+            <a class="guild-card" href="dashboard.html?guild=${g.id}">
+              <div class="guild-icon">${icon}</div>
+              <span class="guild-name">${g.name}</span>
+            </a>`;
+        }).join('')}</div>`;
+    }
+
+    init();
+  </script>
+</body>
+</html>

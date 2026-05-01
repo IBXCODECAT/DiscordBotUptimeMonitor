@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bot Monitor — Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 id="guild-name">Loading…</h1>
+      <div id="user-area"></div>
+    </header>
+
+    <a href="/" class="back">← All servers</a>
+
+    <div class="card" style="margin-bottom:24px">
+      <p class="section-label">Reporting Channel</p>
+      <div class="channel-row">
+        <select id="channel-select"><option>Loading channels…</option></select>
+        <button class="btn btn-primary btn-sm" onclick="saveChannel()">Save</button>
+      </div>
+    </div>
+
+    <p class="section-label">Monitored Bots</p>
+    <div class="card" id="bot-list"><p class="empty">Loading bots…</p></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const guildId = new URLSearchParams(location.search).get('guild');
+    if (!guildId) location.href = '/';
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    async function saveChannel() {
+      const channelId = document.getElementById('channel-select').value;
+      await fetch(`/api/guild/${guildId}/channel`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelId }),
+      });
+      showToast('Reporting channel saved.');
+    }
+
+    async function toggleMonitor(botId, enabled) {
+      await fetch(`/api/guild/${guildId}/bots/${botId}/monitor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      });
+    }
+
+    function avatarUrl(bot) {
+      return bot.avatar
+        ? `https://cdn.discordapp.com/avatars/${bot.id}/${bot.avatar}.png?size=64`
+        : `https://cdn.discordapp.com/embed/avatars/0.png`;
+    }
+
+    async function init() {
+      const meRes = await fetch('/api/me');
+      if (!meRes.ok) { location.href = '/'; return; }
+
+      const me = await meRes.json();
+      const avatarSrc = me.avatar
+        ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=32`
+        : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
+      document.getElementById('user-area').innerHTML = `
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="user-chip">
+            <img src="${avatarSrc}" alt="">
+            <span>${me.username}</span>
+          </div>
+          <a href="/auth/logout" class="btn btn-ghost btn-sm">Logout</a>
+        </div>`;
+
+      const [guild, channelData, bots] = await Promise.all([
+        fetch(`/api/guild/${guildId}`).then(r => r.json()),
+        fetch(`/api/guild/${guildId}/channels`).then(r => r.json()),
+        fetch(`/api/guild/${guildId}/bots`).then(r => r.json()),
+      ]);
+
+      if (guild.error) { location.href = '/'; return; }
+
+      document.title = `${guild.name} — Bot Monitor`;
+      document.getElementById('guild-name').textContent = guild.name;
+
+      const sel = document.getElementById('channel-select');
+      if (!channelData.channels?.length) {
+        sel.innerHTML = '<option>No text channels found</option>';
+      } else {
+        sel.innerHTML = channelData.channels.map(c =>
+          `<option value="${c.id}" ${c.id === channelData.reportingChannelId ? 'selected' : ''}>#${c.name}</option>`
+        ).join('');
+      }
+
+      const botList = document.getElementById('bot-list');
+      if (bots.error) {
+        botList.innerHTML = `<p class="empty">${bots.error}</p>`;
+        return;
+      }
+      if (!bots.length) {
+        botList.innerHTML = '<p class="empty">No other bots found in this server.</p>';
+        return;
+      }
+
+      botList.innerHTML = bots.map(bot => `
+        <div class="bot-row">
+          <div class="bot-avatar"><img src="${avatarUrl(bot)}" alt="" onerror="this.parentElement.textContent='🤖'"></div>
+          <span class="bot-name">${bot.username}</span>
+          <label class="toggle">
+            <input type="checkbox" ${bot.monitored ? 'checked' : ''}
+              onchange="toggleMonitor('${bot.id}', this.checked).then(() => showToast(this.checked ? '${bot.username} is now monitored.' : '${bot.username} removed from monitoring.'))">
+            <span class="slider"></span>
+          </label>
+        </div>`).join('');
+    }
+
+    init();
+  </script>
+</body>
+</html>
