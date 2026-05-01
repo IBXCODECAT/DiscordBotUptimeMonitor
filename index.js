@@ -3,6 +3,7 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const setup = require('./src/commands/setup');
 const ready = require('./src/events/ready');
 const presenceUpdate = require('./src/events/presenceUpdate');
+const guildCreate = require('./src/events/guildCreate');
 
 const client = new Client({
   intents: [
@@ -13,6 +14,7 @@ const client = new Client({
 
 ready.register(client);
 presenceUpdate.register(client);
+guildCreate.register(client);
 
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;

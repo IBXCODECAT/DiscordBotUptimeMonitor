@@ -1,0 +1,2 @@
+# One guild ID per line
+1499257534421405867
